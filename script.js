@@ -1,8 +1,8 @@
 // ⚠️ IMPORTANT: अपनी Supabase keys यहाँ डालें!
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+co
+const SUPABASE_KEY = 'https://cpsvdtjuxvaqubpnjuzy.supabase.co;
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(Waseemsb_publishable_rgDkg3rHV-Y_ps0iA3muLA_i-h3DfoQ);
 
 async function loadVideos() {
     const container = document.getElementById('videosContainer');
