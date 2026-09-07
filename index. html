@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuddnjaan - देखें वीडियो</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>🎬 Chuddnjaan</h1>
+            <p>देखें और आनंद लें</p>
+        </div>
+        <a href="admin.html" class="admin-link">🔐 Admin Login</a>
+    </header>
+
+    <main>
+        <div id="videosContainer" class="videos-grid">
+            <div class="loading">⏳ वीडियो लोड हो रहे हैं...</div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 Chuddnjaan - All Videos hosted on Flezen</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
