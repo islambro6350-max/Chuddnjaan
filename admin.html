@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuddnjaan - Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>🎬 Chuddnjaan</h1>
+            <p>Admin Panel</p>
+        </div>
+        <div>
+            <span id="adminEmail" style="margin-right: 15px;"></span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+            <a href="index.html" class="btn btn-primary">← Home</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Login -->
+        <div id="loginSection" class="admin-section">
+            <div class="login-box">
+                <h2>🔐 Admin Login</h2>
+                <p>कृपया अपने Admin Email और Password से Login करें</p>
+                <form id="loginForm">
+                    <input type="email" id="loginEmail" placeholder="Email" required>
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    पहली बार? <a href="#" id="showSignup">Sign Up करें</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Signup -->
+        <div id="signupSection" class="admin-section" style="display: none;">
+            <div class="login-box">
+                <h2>📝 Admin Sign Up</h2>
+                <p>अपना Admin Account बनाएं</p>
+                <form id="signupForm">
+                    <input type="email" id="signupEmail" placeholder="Email" required>
+                    <input type="password" id="signupPassword" placeholder="Password (6+ characters)" required>
+                    <button type="submit" class="btn btn-primary">Sign Up</button>
+                </form>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    पहले से Account है? <a href="#" id="showLogin">Login करें</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboardSection" class="admin-section" style="display: none;">
+            <div class="dashboard-header">
+                <h2>📊 Dashboard</h2>
+                <button id="addVideoBtn" class="btn btn-success">➕ नया वीडियो जोड़ें</button>
+            </div>
+
+            <div id="videoForm" class="video-form" style="display: none;">
+                <h3 id="formTitle">नया वीडियो जोड़ें</h3>
+                <form id="videoFormElement">
+                    <input type="hidden" id="videoId">
+                    <input type="text" id="videoTitle" placeholder="वीडियो का Title *" required>
+                    <input type="url" id="flezenLink" placeholder="Flezen Video Link *" required>
+                    <input type="url" id="thumbnailUrl" placeholder="Thumbnail URL (Optional)">
+                    <textarea id="description" placeholder="छोटी Description (Optional)" rows="3"></textarea>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="saveVideoBtn">💾 Save Video</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="adminVideosList" class="videos-grid">
+                <div class="loading">⏳ लोड हो रहा है...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>
