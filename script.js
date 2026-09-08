@@ -1,9 +1,6 @@
 // Supabase Configuration
 const SUPABASE_URL = 'https://cpsvdtjuxvaqubpnjuzy.supabase.co';
-const SUPABASE_KEY = 'SUPABASE_URL = 'https://cpsvdtjuxvaqubpnjuzy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rgDkg3rHV-Y_ps0iA3muLA_i-h3DfoQ';
-
-const supabaseClient = supabase.createClient(;
 
 const supabaseClient = supabase.createClient(
     SUPABASE_URL,
@@ -33,37 +30,24 @@ async function loadVideos() {
         container.innerHTML = data.map(video => `
             <div class="video-card">
 
-                ${
-                    video.thumbnail_url
-                        ? `
-                        <img
-                            src="${video.thumbnail_url}"
-                            alt="${video.title}"
-                            class="video-thumbnail"
-                            onclick="watchVideo('${video.flezen_link}')"
-                        >
-                        `
-                        : `
-                        <div
-                            class="video-thumbnail"
-                            style="
-                                background: #2a2a4a;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                color: #666;
-                                font-size: 40px;
-                            "
-                        >
-                            🎬
-                        </div>
-                        `
-                }
+                <div
+                    class="video-thumbnail"
+                    style="
+                        background: #2a2a4a;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #666;
+                        font-size: 40px;
+                        cursor: pointer;
+                    "
+                    onclick="watchVideo('${video.flezen_link}')"
+                >
+                    🎬
+                </div>
 
                 <div class="video-info">
-                    <h3 class="video-title">
-                        ${video.title}
-                    </h3>
+                    <h3 class="video-title">${video.title || ''}</h3>
 
                     ${
                         video.description
@@ -87,7 +71,7 @@ async function loadVideos() {
         console.error('Error:', error);
 
         container.innerHTML =
-            '<div class="loading">❌ वीडियो लोड नहीं हो पाए। कृपया बाद में try करें।</div>';
+            '<div class="loading">❌ वीडियो लोड नहीं हो पाए।</div>';
     }
 }
 
