@@ -40,7 +40,9 @@ const saveVideoBtn = document.getElementById('saveVideoBtn');
 // ==========================================
 
 async function checkAuth() {
+
     try {
+
         const {
             data: { session }
         } = await supabaseClient.auth.getSession();
@@ -52,8 +54,10 @@ async function checkAuth() {
         }
 
     } catch (error) {
+
         console.error('Auth error:', error);
         showLogin();
+
     }
 }
 
@@ -63,6 +67,7 @@ async function checkAuth() {
 // ==========================================
 
 function showLogin() {
+
     loginSection.style.display = 'block';
     signupSection.style.display = 'none';
     dashboardSection.style.display = 'none';
@@ -78,6 +83,7 @@ function showLogin() {
 // ==========================================
 
 function showDashboard(user) {
+
     loginSection.style.display = 'none';
     signupSection.style.display = 'none';
     dashboardSection.style.display = 'block';
@@ -128,7 +134,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 // DISABLE PUBLIC SIGNUP
 // ==========================================
 
-// आपकी वेबसाइट में नया Admin account बनाने का option नहीं होगा।
 if (signupSection) {
     signupSection.style.display = 'none';
 }
@@ -174,7 +179,7 @@ document.getElementById('addVideoBtn').addEventListener('click', () => {
     videoId.value = '';
     videoTitle.value = '';
     flezenLink.value = '';
-    thumbnailUrl.value = '';
+    thumbnailFile.value = '';
     description.value = '';
 
     saveVideoBtn.textContent = '💾 Save Video';
@@ -200,6 +205,48 @@ document.getElementById('cancelBtn').addEventListener('click', () => {
 
 
 // ==========================================
+// UPLOAD THUMBNAIL
+// ==========================================
+
+async function uploadThumbnail(file) {
+
+    if (!file) {
+        return null;
+    }
+
+    const fileExtension =
+        file.name.split('.').pop().toLowerCase();
+
+    const fileName =
+        `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
+
+    const filePath = fileName;
+
+    const { error: uploadError } =
+        await supabaseClient
+            .storage
+            .from('thumbnails')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type
+            });
+
+    if (uploadError) {
+        throw uploadError;
+    }
+
+    const { data } =
+        supabaseClient
+            .storage
+            .from('thumbnails')
+            .getPublicUrl(filePath);
+
+    return data.publicUrl;
+}
+
+
+// ==========================================
 // SAVE / UPDATE VIDEO
 // ==========================================
 
@@ -210,15 +257,19 @@ videoFormElement.addEventListener('submit', async (e) => {
     const id = videoId.value.trim();
     const title = videoTitle.value.trim();
     const flezen = flezenLink.value.trim();
-    const thumbnail = thumbnailUrl.value.trim() || null;
     const desc = description.value.trim() || null;
 
+    const selectedFile =
+        thumbnailFile.files[0];
+
     if (!title) {
+
         alert('❌ Video Title डालें।');
         return;
     }
 
     if (!flezen) {
+
         alert('❌ Flezen Video Link डालें।');
         return;
     }
@@ -228,18 +279,44 @@ videoFormElement.addEventListener('submit', async (e) => {
 
     try {
 
+        let thumbnail = null;
+
+        // अगर Gallery से नई फोटो चुनी गई है
+        if (selectedFile) {
+
+            if (!selectedFile.type.startsWith('image/')) {
+
+                alert('❌ केवल image/photo चुनें।');
+                return;
+            }
+
+            thumbnail =
+                await uploadThumbnail(selectedFile);
+        }
+
+
+        // ==================================
+        // UPDATE EXISTING VIDEO
+        // ==================================
+
         if (id) {
 
-            // UPDATE
-            const { error } = await supabaseClient
-                .from('videos')
-                .update({
-                    title: title,
-                    flezen_link: flezen,
-                    thumbnail_url: thumbnail,
-                    description: desc
-                })
-                .eq('id', id);
+            const updateData = {
+                title: title,
+                flezen_link: flezen,
+                description: desc
+            };
+
+            // नई thumbnail चुनी है तभी बदलें
+            if (thumbnail) {
+                updateData.thumbnail_url = thumbnail;
+            }
+
+            const { error } =
+                await supabaseClient
+                    .from('videos')
+                    .update(updateData)
+                    .eq('id', id);
 
             if (error) {
                 throw error;
@@ -247,17 +324,24 @@ videoFormElement.addEventListener('submit', async (e) => {
 
             alert('✅ वीडियो अपडेट हो गया!');
 
-        } else {
+        }
 
-            // INSERT
-            const { error } = await supabaseClient
-                .from('videos')
-                .insert({
-                    title: title,
-                    flezen_link: flezen,
-                    thumbnail_url: thumbnail,
-                    description: desc
-                });
+
+        // ==================================
+        // INSERT NEW VIDEO
+        // ==================================
+
+        else {
+
+            const { error } =
+                await supabaseClient
+                    .from('videos')
+                    .insert({
+                        title: title,
+                        flezen_link: flezen,
+                        thumbnail_url: thumbnail,
+                        description: desc
+                    });
 
             if (error) {
                 throw error;
@@ -265,6 +349,7 @@ videoFormElement.addEventListener('submit', async (e) => {
 
             alert('✅ वीडियो जोड़ दिया गया!');
         }
+
 
         videoForm.style.display = 'none';
 
@@ -300,12 +385,13 @@ async function loadAdminVideos() {
 
     try {
 
-        const { data, error } = await supabaseClient
-            .from('videos')
-            .select('*')
-            .order('created_at', {
-                ascending: false
-            });
+        const { data, error } =
+            await supabaseClient
+                .from('videos')
+                .select('*')
+                .order('created_at', {
+                    ascending: false
+                });
 
         if (error) {
             throw error;
@@ -407,11 +493,12 @@ window.editVideo = async function (id) {
 
     try {
 
-        const { data, error } = await supabaseClient
-            .from('videos')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const { data, error } =
+            await supabaseClient
+                .from('videos')
+                .select('*')
+                .eq('id', id)
+                .single();
 
         if (error) {
             throw error;
@@ -424,8 +511,10 @@ window.editVideo = async function (id) {
         videoId.value = data.id;
         videoTitle.value = data.title || '';
         flezenLink.value = data.flezen_link || '';
-        thumbnailUrl.value = data.thumbnail_url || '';
         description.value = data.description || '';
+
+        // File input को खाली रखें
+        thumbnailFile.value = '';
 
         saveVideoBtn.textContent = '💾 Update Video';
 
@@ -458,10 +547,11 @@ window.deleteVideo = async function (id) {
 
     try {
 
-        const { error } = await supabaseClient
-            .from('videos')
-            .delete()
-            .eq('id', id);
+        const { error } =
+            await supabaseClient
+                .from('videos')
+                .delete()
+                .eq('id', id);
 
         if (error) {
             throw error;
