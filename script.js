@@ -1,4 +1,3 @@
-
 // ==========================================
 // CHUDDNJAAN - VIDEO LOADER
 // ==========================================
@@ -11,23 +10,28 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
+
 // ==========================================
 // LOAD VIDEOS
 // ==========================================
 
 async function loadVideos() {
 
-    const container = document.getElementById('videosContainer');
+    const container =
+        document.getElementById('videosContainer');
 
     container.innerHTML =
         '<div class="loading">⏳ वीडियो लोड हो रहे हैं...</div>';
 
     try {
 
-        const { data, error } = await supabaseClient
-            .from('videos')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } =
+            await supabaseClient
+                .from('videos')
+                .select('*')
+                .order('created_at', {
+                    ascending: false
+                });
 
         if (error) {
             throw error;
@@ -41,30 +45,55 @@ async function loadVideos() {
             return;
         }
 
+
         container.innerHTML = data.map(video => {
 
-            const title = video.title || 'बिना नाम का वीडियो';
-            const description = video.description || '';
-            const link = video.flezen_link || '';
+            const title =
+                video.title || 'बिना नाम का वीडियो';
+
+            const description =
+                video.description || '';
+
+            const link =
+                video.flezen_link || '';
+
+            const thumbnail =
+                video.thumbnail_url || '';
+
 
             return `
                 <div class="video-card">
 
-                    <div
-                        class="video-thumbnail"
-                        style="
-                            background: #2a2a4a;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            color: #666;
-                            font-size: 40px;
-                            cursor: pointer;
-                        "
-                        onclick="watchVideo('${link}')"
-                    >
-                        🎬
-                    </div>
+                    ${
+                        thumbnail
+                            ? `
+                            <img
+                                src="${thumbnail}"
+                                alt="${title}"
+                                class="video-thumbnail"
+                                onclick="watchVideo('${link}')"
+                                loading="lazy"
+                            >
+                            `
+                            : `
+                            <div
+                                class="video-thumbnail"
+                                style="
+                                    background:#2a2a4a;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    color:#666;
+                                    font-size:40px;
+                                    cursor:pointer;
+                                "
+                                onclick="watchVideo('${link}')"
+                            >
+                                🎬
+                            </div>
+                            `
+                    }
+
 
                     <div class="video-info">
 
@@ -72,11 +101,17 @@ async function loadVideos() {
                             ${title}
                         </h3>
 
+
                         ${
                             description
-                                ? `<p class="video-description">${description}</p>`
+                                ? `
+                                <p class="video-description">
+                                    ${description}
+                                </p>
+                                `
                                 : ''
                         }
+
 
                         ${
                             link
@@ -91,7 +126,9 @@ async function loadVideos() {
                                 </a>
                                 `
                                 : `
-                                <p>❌ वीडियो लिंक उपलब्ध नहीं है</p>
+                                <p>
+                                    ❌ वीडियो लिंक उपलब्ध नहीं है
+                                </p>
                                 `
                         }
 
@@ -102,19 +139,30 @@ async function loadVideos() {
 
         }).join('');
 
+
     } catch (error) {
 
-        console.error('Supabase Error:', error);
+        console.error(
+            'Supabase Error:',
+            error
+        );
 
         container.innerHTML = `
             <div class="loading">
+
                 ❌ वीडियो लोड नहीं हो पाए।
+
                 <br><br>
-                <small>${error.message}</small>
+
+                <small>
+                    ${error.message}
+                </small>
+
             </div>
         `;
     }
 }
+
 
 // ==========================================
 // WATCH VIDEO
@@ -123,12 +171,20 @@ async function loadVideos() {
 function watchVideo(link) {
 
     if (!link) {
-        alert('❌ वीडियो लिंक उपलब्ध नहीं है।');
+
+        alert(
+            '❌ वीडियो लिंक उपलब्ध नहीं है।'
+        );
+
         return;
     }
 
-    window.open(link, '_blank');
+    window.open(
+        link,
+        '_blank'
+    );
 }
+
 
 // ==========================================
 // START
