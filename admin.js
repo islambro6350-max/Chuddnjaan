@@ -281,7 +281,6 @@ videoFormElement.addEventListener('submit', async (e) => {
 
         let thumbnail = null;
 
-        // अगर Gallery से नई फोटो चुनी गई है
         if (selectedFile) {
 
             if (!selectedFile.type.startsWith('image/')) {
@@ -307,7 +306,6 @@ videoFormElement.addEventListener('submit', async (e) => {
                 description: desc
             };
 
-            // नई thumbnail चुनी है तभी बदलें
             if (thumbnail) {
                 updateData.thumbnail_url = thumbnail;
             }
@@ -375,7 +373,7 @@ videoFormElement.addEventListener('submit', async (e) => {
 
 
 // ==========================================
-// LOAD ADMIN VIDEOS
+// LOAD ADMIN VIDEOS + WATCH CLICK COUNTS
 // ==========================================
 
 async function loadAdminVideos() {
@@ -384,6 +382,10 @@ async function loadAdminVideos() {
         '<div class="loading">⏳ वीडियो लोड हो रहे हैं...</div>';
 
     try {
+
+        // ==================================
+        // LOAD VIDEOS
+        // ==================================
 
         const { data, error } =
             await supabaseClient
@@ -397,90 +399,218 @@ async function loadAdminVideos() {
             throw error;
         }
 
+
+        // ==================================
+        // LOAD WATCH CLICKS
+        // ==================================
+
+        const {
+            data: clickData,
+            error: clickError
+        } =
+            await supabaseClient
+                .from('video_clicks')
+                .select('video_id');
+
+        if (clickError) {
+            throw clickError;
+        }
+
+
+        // ==================================
+        // COUNT CLICKS PER VIDEO
+        // ==================================
+
+        const clickCounts = {};
+
+        (clickData || []).forEach(click => {
+
+            const id = String(click.video_id);
+
+            clickCounts[id] =
+                (clickCounts[id] || 0) + 1;
+        });
+
+
+        // ==================================
+        // TOTAL WATCH CLICKS
+        // ==================================
+
+        const totalClicks =
+            (clickData || []).length;
+
+
         if (!data || data.length === 0) {
 
-            adminVideosList.innerHTML =
-                '<div class="loading">😊 अभी कोई वीडियो नहीं है। नया वीडियो जोड़ें!</div>';
+            adminVideosList.innerHTML = `
+                <div class="loading">
+                    😊 अभी कोई वीडियो नहीं है। नया वीडियो जोड़ें!
+                    <br><br>
+                    📊 Total WATCH Clicks: ${totalClicks}
+                </div>
+            `;
 
             return;
         }
 
-        adminVideosList.innerHTML = data.map(video => `
 
-            <div class="video-card">
+        // ==================================
+        // TOTAL CLICK DISPLAY
+        // ==================================
 
-                ${
-                    video.thumbnail_url
-                        ? `
-                        <img
-                            src="${video.thumbnail_url}"
-                            alt="${video.title || 'Video'}"
-                            class="video-thumbnail"
-                        >
-                        `
-                        : `
-                        <div
-                            class="video-thumbnail"
-                            style="
-                                background:#2a2a4a;
-                                display:flex;
-                                align-items:center;
-                                justify-content:center;
-                                color:#666;
-                                font-size:40px;
-                            "
-                        >
-                            🎬
+        const totalClicksBox = `
+            <div
+                style="
+                    grid-column: 1 / -1;
+                    background:#1a1a2e;
+                    border:1px solid #2a2a4a;
+                    border-radius:12px;
+                    padding:20px;
+                    text-align:center;
+                    margin-bottom:10px;
+                "
+            >
+                <div
+                    style="
+                        font-size:28px;
+                        font-weight:700;
+                        color:#e94560;
+                    "
+                >
+                    📊 ${totalClicks}
+                </div>
+
+                <div
+                    style="
+                        color:#aaa;
+                        margin-top:5px;
+                        font-size:15px;
+                    "
+                >
+                    Total WATCH Clicks
+                </div>
+            </div>
+        `;
+
+
+        // ==================================
+        // VIDEO LIST
+        // ==================================
+
+        adminVideosList.innerHTML =
+            totalClicksBox +
+            data.map(video => {
+
+                const videoClicks =
+                    clickCounts[String(video.id)] || 0;
+
+                return `
+
+                    <div class="video-card">
+
+                        ${
+                            video.thumbnail_url
+                                ? `
+                                <img
+                                    src="${video.thumbnail_url}"
+                                    alt="${video.title || 'Video'}"
+                                    class="video-thumbnail"
+                                >
+                                `
+                                : `
+                                <div
+                                    class="video-thumbnail"
+                                    style="
+                                        background:#2a2a4a;
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        color:#666;
+                                        font-size:40px;
+                                    "
+                                >
+                                    🎬
+                                </div>
+                                `
+                        }
+
+                        <div class="video-info">
+
+                            <h3 class="video-title">
+                                ${video.title || 'Untitled Video'}
+                            </h3>
+
+
+                            ${
+                                video.description
+                                    ? `
+                                    <p class="video-description">
+                                        ${video.description}
+                                    </p>
+                                    `
+                                    : ''
+                            }
+
+
+                            <div
+                                style="
+                                    margin:10px 0;
+                                    padding:10px;
+                                    background:#2a2a4a;
+                                    border-radius:6px;
+                                    color:#fff;
+                                    font-weight:600;
+                                "
+                            >
+                                👁️ WATCH CLICKS:
+                                <span
+                                    style="
+                                        color:#e94560;
+                                        font-size:20px;
+                                    "
+                                >
+                                    ${videoClicks}
+                                </span>
+                            </div>
+
+
+                            <div class="admin-actions">
+
+                                <button
+                                    onclick="editVideo('${video.id}')"
+                                    class="btn btn-warning"
+                                >
+                                    ✏️ Edit
+                                </button>
+
+                                <button
+                                    onclick="deleteVideo('${video.id}')"
+                                    class="btn btn-danger"
+                                >
+                                    🗑️ Delete
+                                </button>
+
+                            </div>
+
                         </div>
-                        `
-                }
-
-                <div class="video-info">
-
-                    <h3 class="video-title">
-                        ${video.title || 'Untitled Video'}
-                    </h3>
-
-                    ${
-                        video.description
-                            ? `
-                            <p class="video-description">
-                                ${video.description}
-                            </p>
-                            `
-                            : ''
-                    }
-
-                    <div class="admin-actions">
-
-                        <button
-                            onclick="editVideo('${video.id}')"
-                            class="btn btn-warning"
-                        >
-                            ✏️ Edit
-                        </button>
-
-                        <button
-                            onclick="deleteVideo('${video.id}')"
-                            class="btn btn-danger"
-                        >
-                            🗑️ Delete
-                        </button>
 
                     </div>
 
-                </div>
+                `;
 
-            </div>
-
-        `).join('');
+            }).join('');
 
     } catch (error) {
 
         console.error('Load videos error:', error);
 
-        adminVideosList.innerHTML =
-            '<div class="loading">❌ Videos load नहीं हो पाए।</div>';
+        adminVideosList.innerHTML = `
+            <div class="loading">
+                ❌ Videos load नहीं हो पाए।
+                <br><br>
+                <small>${error.message}</small>
+            </div>
+        `;
     }
 }
 
@@ -513,7 +643,6 @@ window.editVideo = async function (id) {
         flezenLink.value = data.flezen_link || '';
         description.value = data.description || '';
 
-        // File input को खाली रखें
         thumbnailFile.value = '';
 
         saveVideoBtn.textContent = '💾 Update Video';
