@@ -71,7 +71,7 @@ async function loadVideos() {
                                 src="${thumbnail}"
                                 alt="${title}"
                                 class="video-thumbnail"
-                                onclick="watchVideo('${link}')"
+                                onclick="watchVideo('${link}', '${video.id}')"
                                 loading="lazy"
                             >
                             `
@@ -87,7 +87,7 @@ async function loadVideos() {
                                     font-size:40px;
                                     cursor:pointer;
                                 "
-                                onclick="watchVideo('${link}')"
+                                onclick="watchVideo('${link}', '${video.id}')"
                             >
                                 🎬
                             </div>
@@ -121,6 +121,7 @@ async function loadVideos() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="watch-btn"
+                                    onclick="watchVideo('${link}', '${video.id}', event)"
                                 >
                                     ▶ WATCH VIDEO
                                 </a>
@@ -165,10 +166,14 @@ async function loadVideos() {
 
 
 // ==========================================
-// WATCH VIDEO
+// WATCH VIDEO + CLICK TRACKING
 // ==========================================
 
-function watchVideo(link) {
+async function watchVideo(link, videoId, event) {
+
+    if (event) {
+        event.preventDefault();
+    }
 
     if (!link) {
 
@@ -178,6 +183,40 @@ function watchVideo(link) {
 
         return;
     }
+
+
+    // ======================================
+    // RECORD WATCH CLICK
+    // ======================================
+
+    try {
+
+        const { error } =
+            await supabaseClient
+                .from('video_clicks')
+                .insert({
+                    video_id: videoId
+                });
+
+        if (error) {
+            console.error(
+                'Click tracking error:',
+                error
+            );
+        }
+
+    } catch (error) {
+
+        console.error(
+            'Click tracking error:',
+            error
+        );
+    }
+
+
+    // ======================================
+    // OPEN FLEZEN VIDEO
+    // ======================================
 
     window.open(
         link,
