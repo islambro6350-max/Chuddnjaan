@@ -28,7 +28,7 @@ const videoFormElement = document.getElementById('videoFormElement');
 const videoId = document.getElementById('videoId');
 const videoTitle = document.getElementById('videoTitle');
 const flezenLink = document.getElementById('flezenLink');
-const thumbnailUrl = document.getElementById('thumbnailUrl');
+const thumbnailFile = document.getElementById('thumbnailFile');
 const description = document.getElementById('description');
 
 const formTitle = document.getElementById('formTitle');
