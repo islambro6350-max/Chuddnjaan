@@ -56,11 +56,78 @@ const flezenLink =
 const description =
     document.getElementById('description');
 
+const thumbnailFile =
+    document.getElementById('thumbnailFile');
+
 const formTitle =
     document.getElementById('formTitle');
 
 const saveVideoBtn =
     document.getElementById('saveVideoBtn');
+
+
+// ==========================================
+// THUMBNAIL UPLOAD
+// ==========================================
+
+async function uploadThumbnail(file) {
+
+    if (!file) {
+        return null;
+    }
+
+    const fileExt =
+        file.name.split('.').pop();
+
+    const fileName =
+        Date.now() +
+        '_' +
+        Math.random()
+            .toString(36)
+            .substring(2, 8) +
+        '.' +
+        fileExt;
+
+
+    const {
+        error: uploadError
+    } =
+        await supabaseClient
+            .storage
+            .from('thumbnails')
+            .upload(
+                fileName,
+                file,
+                {
+                    cacheControl: '3600',
+                    upsert: false
+                }
+            );
+
+
+    if (uploadError) {
+
+        throw new Error(
+            'Thumbnail upload failed: ' +
+            uploadError.message
+        );
+
+    }
+
+
+    const {
+        data: urlData
+    } =
+        supabaseClient
+            .storage
+            .from('thumbnails')
+            .getPublicUrl(
+                fileName
+            );
+
+
+    return urlData.publicUrl;
+}
 
 
 // ==========================================
@@ -293,6 +360,10 @@ document
 
             description.value = '';
 
+            if (thumbnailFile) {
+                thumbnailFile.value = '';
+            }
+
             saveVideoBtn.textContent =
                 '💾 Save Video';
 
@@ -379,32 +450,77 @@ videoFormElement
 
             try {
 
+                // ==================================
+                // UPLOAD NEW THUMBNAIL IF SELECTED
+                // ==================================
+
+                let thumbnail_url = null;
+
+                if (
+                    thumbnailFile &&
+                    thumbnailFile.files &&
+                    thumbnailFile.files[0]
+                ) {
+
+                    saveVideoBtn.textContent =
+                        '⏳ Thumbnail Upload हो रहा है...';
+
+                    thumbnail_url =
+                        await uploadThumbnail(
+                            thumbnailFile.files[0]
+                        );
+
+                }
+
+
                 if (id) {
 
                     // =========================
                     // UPDATE
                     // =========================
 
+                    const updateData = {
+
+                        title: title,
+
+                        flezen_link: flezen,
+
+                        description: desc
+
+                    };
+
+
+                    // अगर नया thumbnail चुना है
+                    // तभी thumbnail_url update करें
+
+                    if (thumbnail_url) {
+
+                        updateData.thumbnail_url =
+                            thumbnail_url;
+
+                    }
+
+
                     const {
                         error
                     } =
                         await supabaseClient
                             .from('videos')
-                            .update({
-                                title: title,
-                                flezen_link: flezen,
-                                description: desc
-                            })
+                            .update(
+                                updateData
+                            )
                             .eq(
                                 'id',
                                 id
                             );
+
 
                     if (error) {
 
                         throw error;
 
                     }
+
 
                     alert(
                         '✅ वीडियो अपडेट हो गया!'
@@ -422,16 +538,25 @@ videoFormElement
                         await supabaseClient
                             .from('videos')
                             .insert({
+
                                 title: title,
+
                                 flezen_link: flezen,
-                                description: desc
+
+                                description: desc,
+
+                                thumbnail_url:
+                                    thumbnail_url
+
                             });
+
 
                     if (error) {
 
                         throw error;
 
                     }
+
 
                     alert(
                         '✅ वीडियो जोड़ दिया गया!'
@@ -908,6 +1033,10 @@ window.editVideo =
 
             description.value =
                 data.description || '';
+
+            if (thumbnailFile) {
+                thumbnailFile.value = '';
+            }
 
             saveVideoBtn.textContent =
                 '💾 Update Video';
