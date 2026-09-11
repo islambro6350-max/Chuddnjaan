@@ -169,13 +169,13 @@ async function loadVideos() {
 // WATCH VIDEO + CLICK TRACKING
 // ==========================================
 
-async function watchVideo(link, videoId, event) {
-
-    if (event) {
-        event.preventDefault();
-    }
+function watchVideo(link, videoId, event) {
 
     if (!link) {
+
+        if (event) {
+            event.preventDefault();
+        }
 
         alert(
             '❌ वीडियो लिंक उपलब्ध नहीं है।'
@@ -186,42 +186,59 @@ async function watchVideo(link, videoId, event) {
 
 
     // ======================================
-    // RECORD WATCH CLICK
+    // OPEN FLEZEN LINK
     // ======================================
 
-    try {
+    if (event) {
 
-        const { error } =
-            await supabaseClient
-                .from('video_clicks')
-                .insert({
-                    video_id: videoId
-                });
+        // WATCH VIDEO button:
+        // <a> का अपना href खुलेगा।
+        // यहां popup को रोकना नहीं है.
 
-        if (error) {
-            console.error(
-                'Click tracking error:',
-                error
-            );
-        }
+    } else {
 
-    } catch (error) {
+        // Thumbnail पर tap:
+        // Flezen link तुरंत खुलेगा.
 
-        console.error(
-            'Click tracking error:',
-            error
+        window.open(
+            link,
+            '_blank'
         );
     }
 
 
     // ======================================
-    // OPEN FLEZEN VIDEO
+    // RECORD WATCH CLICK
     // ======================================
 
-    window.open(
-        link,
-        '_blank'
-    );
+    // Link खुलने के बाद click background
+    // में Supabase में save होगा.
+
+    supabaseClient
+        .from('video_clicks')
+        .insert({
+            video_id: videoId
+        })
+        .then(({ error }) => {
+
+            if (error) {
+
+                console.error(
+                    'Click tracking error:',
+                    error
+                );
+
+            }
+
+        })
+        .catch(error => {
+
+            console.error(
+                'Click tracking error:',
+                error
+            );
+
+        });
 }
 
 
