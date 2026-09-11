@@ -1,378 +1,4 @@
 // ==========================================
-// CHUDDNJAAN - ADMIN PANEL
-// ==========================================
-
-// Supabase Configuration
-const SUPABASE_URL = 'https://cpsvdtjuxvaqubpnjuzy.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_rgDkg3rHV-Y_ps0iA3muLA_i-h3DfoQ';
-
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
-
-
-// ==========================================
-// DOM ELEMENTS
-// ==========================================
-
-const loginSection = document.getElementById('loginSection');
-const signupSection = document.getElementById('signupSection');
-const dashboardSection = document.getElementById('dashboardSection');
-
-const adminEmail = document.getElementById('adminEmail');
-const videoForm = document.getElementById('videoForm');
-const adminVideosList = document.getElementById('adminVideosList');
-const videoFormElement = document.getElementById('videoFormElement');
-
-const videoId = document.getElementById('videoId');
-const videoTitle = document.getElementById('videoTitle');
-const flezenLink = document.getElementById('flezenLink');
-const thumbnailFile = document.getElementById('thumbnailFile');
-const description = document.getElementById('description');
-
-const formTitle = document.getElementById('formTitle');
-const saveVideoBtn = document.getElementById('saveVideoBtn');
-
-
-// ==========================================
-// AUTH CHECK
-// ==========================================
-
-async function checkAuth() {
-
-    try {
-
-        const {
-            data: { session }
-        } = await supabaseClient.auth.getSession();
-
-        if (session) {
-            showDashboard(session.user);
-        } else {
-            showLogin();
-        }
-
-    } catch (error) {
-
-        console.error('Auth error:', error);
-        showLogin();
-
-    }
-}
-
-
-// ==========================================
-// SHOW LOGIN
-// ==========================================
-
-function showLogin() {
-
-    loginSection.style.display = 'block';
-    signupSection.style.display = 'none';
-    dashboardSection.style.display = 'none';
-
-    if (adminEmail) {
-        adminEmail.textContent = '';
-    }
-}
-
-
-// ==========================================
-// SHOW DASHBOARD
-// ==========================================
-
-function showDashboard(user) {
-
-    loginSection.style.display = 'none';
-    signupSection.style.display = 'none';
-    dashboardSection.style.display = 'block';
-
-    adminEmail.textContent = user.email;
-
-    loadAdminVideos();
-}
-
-
-// ==========================================
-// LOGIN
-// ==========================================
-
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-
-    e.preventDefault();
-
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-
-    try {
-
-        const { data, error } =
-            await supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-
-        if (error) {
-            throw error;
-        }
-
-        showDashboard(data.user);
-
-        document.getElementById('loginForm').reset();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert('❌ Login failed: ' + error.message);
-    }
-});
-
-
-// ==========================================
-// DISABLE PUBLIC SIGNUP
-// ==========================================
-
-if (signupSection) {
-    signupSection.style.display = 'none';
-}
-
-const showSignupLink = document.getElementById('showSignup');
-
-if (showSignupLink) {
-    showSignupLink.style.display = 'none';
-}
-
-
-// ==========================================
-// LOGOUT
-// ==========================================
-
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-
-    try {
-
-        await supabaseClient.auth.signOut();
-
-        videoForm.style.display = 'none';
-
-        showLogin();
-
-    } catch (error) {
-
-        alert('❌ Logout failed: ' + error.message);
-    }
-});
-
-
-// ==========================================
-// ADD VIDEO FORM
-// ==========================================
-
-document.getElementById('addVideoBtn').addEventListener('click', () => {
-
-    videoForm.style.display = 'block';
-
-    formTitle.textContent = '📝 नया वीडियो जोड़ें';
-
-    videoId.value = '';
-    videoTitle.value = '';
-    flezenLink.value = '';
-    thumbnailFile.value = '';
-    description.value = '';
-
-    saveVideoBtn.textContent = '💾 Save Video';
-
-    videoForm.scrollIntoView({
-        behavior: 'smooth'
-    });
-});
-
-
-// ==========================================
-// CANCEL FORM
-// ==========================================
-
-document.getElementById('cancelBtn').addEventListener('click', () => {
-
-    videoForm.style.display = 'none';
-
-    videoFormElement.reset();
-
-    videoId.value = '';
-});
-
-
-// ==========================================
-// UPLOAD THUMBNAIL
-// ==========================================
-
-async function uploadThumbnail(file) {
-
-    if (!file) {
-        return null;
-    }
-
-    const fileExtension =
-        file.name.split('.').pop().toLowerCase();
-
-    const fileName =
-        `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
-
-    const filePath = fileName;
-
-    const { error: uploadError } =
-        await supabaseClient
-            .storage
-            .from('thumbnails')
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false,
-                contentType: file.type
-            });
-
-    if (uploadError) {
-        throw uploadError;
-    }
-
-    const { data } =
-        supabaseClient
-            .storage
-            .from('thumbnails')
-            .getPublicUrl(filePath);
-
-    return data.publicUrl;
-}
-
-
-// ==========================================
-// SAVE / UPDATE VIDEO
-// ==========================================
-
-videoFormElement.addEventListener('submit', async (e) => {
-
-    e.preventDefault();
-
-    const id = videoId.value.trim();
-    const title = videoTitle.value.trim();
-    const flezen = flezenLink.value.trim();
-    const desc = description.value.trim() || null;
-
-    const selectedFile =
-        thumbnailFile.files[0];
-
-    if (!title) {
-
-        alert('❌ Video Title डालें।');
-        return;
-    }
-
-    if (!flezen) {
-
-        alert('❌ Flezen Video Link डालें।');
-        return;
-    }
-
-    saveVideoBtn.disabled = true;
-    saveVideoBtn.textContent = '⏳ Saving...';
-
-    try {
-
-        let thumbnail = null;
-
-        if (selectedFile) {
-
-            if (!selectedFile.type.startsWith('image/')) {
-
-                alert('❌ केवल image/photo चुनें।');
-                return;
-            }
-
-            thumbnail =
-                await uploadThumbnail(selectedFile);
-        }
-
-
-        // ==================================
-        // UPDATE EXISTING VIDEO
-        // ==================================
-
-        if (id) {
-
-            const updateData = {
-                title: title,
-                flezen_link: flezen,
-                description: desc
-            };
-
-            if (thumbnail) {
-                updateData.thumbnail_url = thumbnail;
-            }
-
-            const { error } =
-                await supabaseClient
-                    .from('videos')
-                    .update(updateData)
-                    .eq('id', id);
-
-            if (error) {
-                throw error;
-            }
-
-            alert('✅ वीडियो अपडेट हो गया!');
-
-        }
-
-
-        // ==================================
-        // INSERT NEW VIDEO
-        // ==================================
-
-        else {
-
-            const { error } =
-                await supabaseClient
-                    .from('videos')
-                    .insert({
-                        title: title,
-                        flezen_link: flezen,
-                        thumbnail_url: thumbnail,
-                        description: desc
-                    });
-
-            if (error) {
-                throw error;
-            }
-
-            alert('✅ वीडियो जोड़ दिया गया!');
-        }
-
-
-        videoForm.style.display = 'none';
-
-        videoFormElement.reset();
-
-        videoId.value = '';
-
-        await loadAdminVideos();
-
-    } catch (error) {
-
-        console.error('Save error:', error);
-
-        alert('❌ Error: ' + error.message);
-
-    } finally {
-
-        saveVideoBtn.disabled = false;
-
-        saveVideoBtn.textContent = '💾 Save Video';
-    }
-});
-
-
-// ==========================================
 // LOAD ADMIN VIDEOS + WATCH CLICK COUNTS
 // ==========================================
 
@@ -401,19 +27,43 @@ async function loadAdminVideos() {
 
 
         // ==================================
-        // LOAD WATCH CLICKS
+        // LOAD ALL WATCH CLICKS
+        // Supabase 1000-row limit को handle करना
         // ==================================
 
-        const {
-            data: clickData,
-            error: clickError
-        } =
-            await supabaseClient
-                .from('video_clicks')
-                .select('video_id');
+        let allClickData = [];
+        let from = 0;
+        const pageSize = 1000;
 
-        if (clickError) {
-            throw clickError;
+        while (true) {
+
+            const {
+                data: clickPage,
+                error: clickError
+            } =
+                await supabaseClient
+                    .from('video_clicks')
+                    .select('video_id')
+                    .range(from, from + pageSize - 1);
+
+            if (clickError) {
+                throw clickError;
+            }
+
+            if (!clickPage || clickPage.length === 0) {
+                break;
+            }
+
+            allClickData =
+                allClickData.concat(clickPage);
+
+            // अगर 1000 से कम मिले,
+            // तो सारे records मिल चुके हैं
+            if (clickPage.length < pageSize) {
+                break;
+            }
+
+            from += pageSize;
         }
 
 
@@ -423,7 +73,7 @@ async function loadAdminVideos() {
 
         const clickCounts = {};
 
-        (clickData || []).forEach(click => {
+        allClickData.forEach(click => {
 
             const id = String(click.video_id);
 
@@ -437,16 +87,26 @@ async function loadAdminVideos() {
         // ==================================
 
         const totalClicks =
-            (clickData || []).length;
+            allClickData.length;
 
+
+        // ==================================
+        // NO VIDEOS
+        // ==================================
 
         if (!data || data.length === 0) {
 
             adminVideosList.innerHTML = `
                 <div class="loading">
-                    😊 अभी कोई वीडियो नहीं है। नया वीडियो जोड़ें!
+
+                    😊 अभी कोई वीडियो नहीं है।
+                    नया वीडियो जोड़ें!
+
                     <br><br>
-                    📊 Total WATCH Clicks: ${totalClicks}
+
+                    📊 Total WATCH Clicks:
+                    ${totalClicks}
+
                 </div>
             `;
 
@@ -470,6 +130,7 @@ async function loadAdminVideos() {
                     margin-bottom:10px;
                 "
             >
+
                 <div
                     style="
                         font-size:28px;
@@ -489,6 +150,7 @@ async function loadAdminVideos() {
                 >
                     Total WATCH Clicks
                 </div>
+
             </div>
         `;
 
@@ -499,6 +161,7 @@ async function loadAdminVideos() {
 
         adminVideosList.innerHTML =
             totalClicksBox +
+
             data.map(video => {
 
                 const videoClicks =
@@ -540,7 +203,6 @@ async function loadAdminVideos() {
                                 ${video.title || 'Untitled Video'}
                             </h3>
 
-
                             ${
                                 video.description
                                     ? `
@@ -550,7 +212,6 @@ async function loadAdminVideos() {
                                     `
                                     : ''
                             }
-
 
                             <div
                                 style="
@@ -562,7 +223,9 @@ async function loadAdminVideos() {
                                     font-weight:600;
                                 "
                             >
+
                                 👁️ WATCH CLICKS:
+
                                 <span
                                     style="
                                         color:#e94560;
@@ -571,6 +234,7 @@ async function loadAdminVideos() {
                                 >
                                     ${videoClicks}
                                 </span>
+
                             </div>
 
 
@@ -600,126 +264,26 @@ async function loadAdminVideos() {
 
             }).join('');
 
+
     } catch (error) {
 
-        console.error('Load videos error:', error);
+        console.error(
+            'Load videos error:',
+            error
+        );
 
         adminVideosList.innerHTML = `
             <div class="loading">
+
                 ❌ Videos load नहीं हो पाए।
+
                 <br><br>
-                <small>${error.message}</small>
+
+                <small>
+                    ${error.message}
+                </small>
+
             </div>
         `;
     }
 }
-
-
-// ==========================================
-// EDIT VIDEO
-// ==========================================
-
-window.editVideo = async function (id) {
-
-    try {
-
-        const { data, error } =
-            await supabaseClient
-                .from('videos')
-                .select('*')
-                .eq('id', id)
-                .single();
-
-        if (error) {
-            throw error;
-        }
-
-        videoForm.style.display = 'block';
-
-        formTitle.textContent = '✏️ वीडियो एडिट करें';
-
-        videoId.value = data.id;
-        videoTitle.value = data.title || '';
-        flezenLink.value = data.flezen_link || '';
-        description.value = data.description || '';
-
-        thumbnailFile.value = '';
-
-        saveVideoBtn.textContent = '💾 Update Video';
-
-        videoForm.scrollIntoView({
-            behavior: 'smooth'
-        });
-
-    } catch (error) {
-
-        console.error('Edit error:', error);
-
-        alert('❌ Error: ' + error.message);
-    }
-};
-
-
-// ==========================================
-// DELETE VIDEO
-// ==========================================
-
-window.deleteVideo = async function (id) {
-
-    const confirmed = confirm(
-        'क्या आप इस वीडियो को DELETE करना चाहते हैं?'
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    try {
-
-        const { error } =
-            await supabaseClient
-                .from('videos')
-                .delete()
-                .eq('id', id);
-
-        if (error) {
-            throw error;
-        }
-
-        alert('✅ वीडियो डिलीट हो गया!');
-
-        await loadAdminVideos();
-
-    } catch (error) {
-
-        console.error('Delete error:', error);
-
-        alert('❌ Error: ' + error.message);
-    }
-};
-
-
-// ==========================================
-// AUTH STATE CHANGE
-// ==========================================
-
-supabaseClient.auth.onAuthStateChange((event, session) => {
-
-    if (event === 'SIGNED_IN' && session) {
-
-        showDashboard(session.user);
-
-    } else if (event === 'SIGNED_OUT') {
-
-        showLogin();
-    }
-});
-
-
-// ==========================================
-// START
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-});
